@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>療癒打地鼠</title>
+  <style>
+    /* 整體配色與排版 */
+    body {
+      background-color: #E0F2E9; /* 舒適的薄荷綠 */
+      color: #5D4037; /* 溫暖的咖啡色 */
+      font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 0px #C8E6D6;
+    }
+
+    .info {
+      display: flex;
+      gap: 40px;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      background-color: rgba(255, 255, 255, 0.5);
+      padding: 10px 30px;
+      border-radius: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    button {
+      background-color: #8D6E63; /* 淺咖啡色 */
+      color: #E0F2E9;
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 6px rgba(93, 64, 55, 0.3);
+      transition: all 0.1s;
+    }
+
+    button:hover {
+      background-color: #795548;
+    }
+
+    button:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 3px rgba(93, 64, 55, 0.3);
+    }
+
+    button:disabled {
+      background-color: #BCAAA4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* 九宮格地洞區域 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+
+    .hole {
+      width: 110px;
+      height: 110px;
+      background-color: #4E342E; /* 深咖啡色（洞穴內部） */
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 15px 20px rgba(0,0,0,0.5), 0 5px 0 #A1887F;
+    }
+
+    /* 可愛地鼠設計 */
+    .mole {
+      width: 80px;
+      height: 90px;
+      background-color: #A1887F; /* 地鼠皮膚色 */
+      border-radius: 50% 50% 20% 20%;
+      position: absolute;
+      bottom: -100%; /* 預設藏在洞裡 */
+      left: 15px;
+      display: flex;
+      justify-content: center;
+      padding-top: 20px;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: bottom 0.15s ease-out; /* 探出頭的動畫 */
+    }
+
+    /* 地鼠的小臉 */
+    .mole::after {
+      content: '•ᴥ•';
+      color: #3E2723;
+      font-weight: bold;
+      font-size: 24px;
+    }
+
+    /* 當地鼠冒出來時加上的 class */
+    .mole.up {
+      bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🐾 療癒打地鼠 🐾</h1>
+  
+  <div class="info">
+    <div>分數: <span id="score">0</span></div>
+    <div>時間: <span id="time">30</span> 秒</div>
+  </div>
+
+  <button id="start-btn" onclick="startGame()">開始遊戲</button>
+
+  <div class="grid">
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+    <div class="hole"><div class="mole" onclick="whack(this)"></div></div>
+  </div>
+
+  <script>
+    const holes = document.querySelectorAll('.hole');
+    const scoreBoard = document.querySelector('#score');
+    const timeDisplay = document.querySelector('#time');
+    const startBtn = document.querySelector('#start-btn');
+    
+    let lastHole;
+    let timeUp = false;
+    let score = 0;
+    let timeLeft = 30;
+    let countdownTimer;
+
+    // 產生隨機時間（地鼠出現的長短）
+    function randomTime(min, max) {
+      return Math.round(Math.random() * (max - min) + min);
+    }
+
+    // 隨機選擇一個地洞
+    function randomHole(holes) {
+      const idx = Math.floor(Math.random() * holes.length);
+      const hole = holes[idx];
+      // 避免連續兩次從同一個洞跑出來
+      if (hole === lastHole) {
+        return randomHole(holes);
+      }
+      lastHole = hole;
+      return hole;
+    }
+
+    // 讓地鼠探出頭
+    function peep() {
+      const time = randomTime(500, 1000); // 地鼠停留 0.5 到 1 秒
+      const hole = randomHole(holes);
+      const mole = hole.querySelector('.mole');
+      
+      mole.classList.add('up');
+      
+      setTimeout(() => {
+        mole.classList.remove('up');
+        if (!timeUp) peep(); // 如果時間還沒到，繼續下一隻
+      }, time);
+    }
+
+    // 開始遊戲邏輯
+    function startGame() {
+      scoreBoard.textContent = 0;
+      timeDisplay.textContent = 30;
+      timeUp = false;
+      score = 0;
+      timeLeft = 30;
+      startBtn.disabled = true; // 遊戲中禁用開始按鈕
+
+      peep(); // 開始冒地鼠
+
+      // 倒數計時器
+      countdownTimer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+          clearInterval(countdownTimer);
+          timeUp = true;
+          startBtn.disabled = false;
+          setTimeout(() => alert(`時間到！你的最終分數是：${score} 分 🎉`), 100);
+        }
+      }, 1000);
+    }
+
+    // 點擊（打）地鼠的動作
+    function whack(mole) {
+      if (!mole.classList.contains('up')) return; // 確保打到的是冒出來的
+      score++;
+      mole.classList.remove('up'); // 打到就縮回去
+      scoreBoard.textContent = score;
+    }
+  </script>
+</body>
+</html>
