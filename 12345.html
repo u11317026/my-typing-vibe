@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 打字練習手</title>
+    <style>
+        :root {
+            --primary: #4285f4;
+            --bg: #f8f9fa;
+            --text: #3c4043;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: var(--primary); text-align: center; }
+        #display-text {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #eee;
+            border-radius: 8px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .correct { color: #28a745; }
+        .incorrect { color: #dc3545; text-decoration: underline; }
+        .current { background-color: #cce5ff; border-radius: 2px; }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            font-size: 1.1rem;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+        textarea:focus { border-color: var(--primary); }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .btn-group {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: var(--primary);
+            color: white;
+            transition: 0.3s;
+        }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⌨️ 打字練習測試</h1>
+    
+    <div class="btn-group">
+        <button onclick="loadText('zh')">中文練習</button>
+        <button onclick="loadText('en')">英文練習</button>
+    </div>
+
+    <div id="display-text">請點擊上方按鈕開始練習...</div>
+
+    <textarea id="input-field" placeholder="點擊這裡開始打字..." disabled></textarea>
+
+    <div class="stats">
+        <span>速度: <span id="wpm">0</span> WPM</span>
+        <span>正確率: <span id="accuracy">0</span>%</span>
+        <span>時間: <span id="timer">0</span>s</span>
+    </div>
+</div>
+
+<script>
+    const texts = {
+        zh: [
+            "人工智慧正在改變我們的生活方式，學習程式語言是通往未來的鑰匙。",
+            "成功不是終點，失敗也不是終結，唯有勇氣才是永恆。",
+            "靜坐常思己過，閒談莫論人非。做事要踏實，為人要誠懇。",
+            "春眠不覺曉，處處聞啼鳥。夜來風雨聲，花落知多少。"
+        ],
+        en: [
+            "The quick brown fox jumps over the lazy dog.",
+            "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+            "Technology is best when it brings people together.",
+            "Believe you can and you're halfway there."
+        ]
+    };
+
+    let targetText = "";
+    let startTime = null;
+    let timerInterval = null;
+
+    const displayElement = document.getElementById('display-text');
+    const inputField = document.getElementById('input-field');
+    const wpmElement = document.getElementById('wpm');
+    const accElement = document.getElementById('accuracy');
+    const timerElement = document.getElementById('timer');
+
+    function loadText(lang) {
+        const pool = texts[lang];
+        targetText = pool[Math.floor(Math.random() * pool.length)];
+        renderText("");
+        inputField.value = "";
+        inputField.disabled = false;
+        inputField.focus();
+        
+        // Reset stats
+        clearInterval(timerInterval);
+        startTime = null;
+        timerElement.innerText = "0";
+        wpmElement.innerText = "0";
+        accElement.innerText = "0";
+    }
+
+    function renderText(inputValue) {
+        let html = "";
+        let correctChars = 0;
+        
+        for (let i = 0; i < targetText.length; i++) {
+            let char = targetText[i];
+            let colorClass = "";
+            
+            if (i < inputValue.length) {
+                if (inputValue[i] === char) {
+                    colorClass = "correct";
+                    correctChars++;
+                } else {
+                    colorClass = "incorrect";
+                }
+            } else if (i === inputValue.length) {
+                colorClass = "current";
+            }
+            
+            html += `<span class="${colorClass}">${char}</span>`;
+        }
+        displayElement.innerHTML = html;
+        return correctChars;
+    }
+
+    inputField.addEventListener('input', () => {
+        if (!startTime) {
+            startTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        const currentInput = inputField.value;
+        const correctChars = renderText(currentInput);
+        
+        // 計算正確率
+        const accuracy = currentInput.length > 0 
+            ? Math.floor((correctChars / currentInput.length) * 100) 
+            : 0;
+        accElement.innerText = accuracy;
+
+        // 判斷是否完成
+        if (currentInput.length >= targetText.length) {
+            clearInterval(timerInterval);
+            inputField.disabled = true;
+            alert(`練習完成！您的速度是 ${wpmElement.innerText} WPM`);
+        }
+    });
+
+    function updateTimer() {
+        const now = new Date();
+        const seconds = Math.floor((now - startTime) / 1000);
+        timerElement.innerText = seconds;
+
+        // WPM 計算 (以 5 個字為一個字組單位)
+        const words = inputField.value.length / 5;
+        const minutes = seconds / 60;
+        if (minutes > 0) {
+            wpmElement.innerText = Math.floor(words / minutes);
+        }
+    }
+</script>
+
+</body>
+</html>
